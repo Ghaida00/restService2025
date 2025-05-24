@@ -1,0 +1,32 @@
+# Dependencies
+/node_modules
+
+# Environment variables
+.env
+*.env
+.env.*
+!.env.example # Kita ingin .env.example tetap di-commit
+
+# Log files
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+logs
+*.log
+
+# Build output
+dist
+build
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# Editor directories and files
+.vscode/ # Kecuali jika Anda ingin berbagi setting spesifik VS Code
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
