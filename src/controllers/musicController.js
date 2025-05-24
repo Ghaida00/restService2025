@@ -3,6 +3,9 @@ const mm = require('music-metadata');
 const fs = require('fs');
 const { db } = require('../config/firebase');
 
+// ======== HARAP CEK MODULE EXPORT DI PALING BAWAH BUAT TAMBAH METHOD KAMU =========
+
+// POST Create Music Baru (Nofa)
 const addMusic = async (req, res) => {
     try {
         const { title, artist } = req.body;
@@ -49,6 +52,35 @@ const addMusic = async (req, res) => {
     
 };
 
+
+// GET Music by ID (Nofa)
+const getMusicById = async (req, res) => {
+  const musicId = req.params.id;
+
+  try {
+    const doc = await db.collection('music').doc(musicId).get();
+
+    if (!doc.exists) {
+      return res.status(404).json({ error: 'Lagu tidak ditemukan' });
+    }
+
+    return res.status(200).json({
+      id: doc.id,
+      ...doc.data(),
+    });
+  } catch (err) {
+    return res.status(500).json({
+      error: 'Gagal mengambil data lagu',
+      details: err.message
+    });
+  }
+};
+
+
+
 module.exports = {
-    addMusic
+    addMusic,
+    getMusicById,
+    //janlup tambahin nama method klen disini yaa
+
 };
