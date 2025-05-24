@@ -49,6 +49,6 @@ const addMusic = async (req, res) => {
     
 };
 
-moduole.exports = {
+module.exports = {
     addMusic
 };
