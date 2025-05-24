@@ -1,10 +1,12 @@
 const cloudinary = require('cloudinary').v2;
+const dotenv = require('dotenv');
+
+dotenv.config();
 
 cloudinary.config({
-    cloud_name: 'dsi0bqoc8',
-    api_key: '237853841278558',
-    api_secret: '24MeyxnqYVru-GpnIMVutTJWO8U',
-    timeout: 60000, // Set timeout to 60 seconds
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
 });
 
 module.exports = cloudinary;
