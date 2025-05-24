@@ -5,20 +5,23 @@ const upload = require('../middleware/multer');
 const { 
     addMusic,
     getMusicById,
-    //janlup add nama method klen disini ges
-
+    getAllMusic
+    //add more...
 } = require('../controllers/musicController');
 
-// ===== BIKIN METHOD MULAI DI BAWAH INI YEAHHH ====
-
-// POST Music (Nofa)
+// POST Music 
 router.post('/', upload.fields([
     { name: 'music', maxCount: 1 },
     { name: 'cover', maxCount: 1 }
 ]), addMusic);
 
-// GET Music by ID (Nofa)
+// GET All Music
+router.get('/', getAllMusic);
+
+// GET Music by ID 
 router.get('/:id', getMusicById);
+
+//add more method...
 
 module.exports = router;
     
