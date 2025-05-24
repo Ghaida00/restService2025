@@ -1,5 +1,6 @@
 const { auth, db, admin } = require('../config/firebase');
 const { validationResult } = require('express-validator');
+const axios = require('axios');
 
 exports.registerUser = async (req, res, next) => {
     const errors = validationResult(req);
