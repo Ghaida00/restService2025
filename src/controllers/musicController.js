@@ -6,8 +6,8 @@ const { db } = require('../config/firebase');
 const addMusic = async (req, res) => {
     try {
         const { title, artist } = req.body;
-        const musicFile = req.files.music?.[0];
-        const imageFile = req.files.image?.[0];
+        const musicFile = req.files?.music?.[0];
+        const imageFile = req.files?.image?.[0];
 
         if ( !title || !artist || !musicFile || !imageFile) {
             return res.status(400).json({ error: 'Semua field harus diisi' });
