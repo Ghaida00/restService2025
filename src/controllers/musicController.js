@@ -1,4 +1,4 @@
-const { cloudinary } = require('../config/cloudinary');
+const cloudinary = require('../config/cloudinary');
 const mm = require('music-metadata');
 const fs = require('fs');
 const { db } = require('../config/firebase');
