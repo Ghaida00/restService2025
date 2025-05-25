@@ -11,6 +11,8 @@ const {
     getMusicByUser,
     updateMusic,
     deleteMusic,
+    getExploreMusic,
+    getTopArtists,
     //add more...
 } = require('../controllers/musicController');
 
@@ -32,6 +34,12 @@ router.get('/user',
     verifyFirebaseToken, 
     getMusicByUser
 );
+
+// GET Explore Music
+router.get('/explore', getExploreMusic);
+
+// GET Top Artists
+router.get('/top-artists', getTopArtists);
 
 // GET Music by ID 
 router.get('/:id', getMusicById);
