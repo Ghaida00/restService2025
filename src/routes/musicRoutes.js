@@ -14,10 +14,14 @@ const {
 } = require('../controllers/musicController');
 
 // POST Music 
-router.post('/', verifyFirebaseToken, upload.fields([
+router.post('/', 
+    verifyFirebaseToken, 
+    upload.fields([
     { name: 'music', maxCount: 1 },
     { name: 'cover', maxCount: 1 }
-]), addMusic);
+]), 
+    addMusic
+);
 
 // GET All Music
 router.get('/', getAllMusic);
@@ -26,10 +30,21 @@ router.get('/', getAllMusic);
 router.get('/:id', getMusicById);
 
 // GET Music by User ID
-router.get('/user', verifyFirebaseToken, getMusicByUser);
+router.get('/user', 
+    verifyFirebaseToken, 
+    getMusicByUser
+);
 
 // PUT Update Music
-router.put('/:id', verifyFirebaseToken, updateMusic);
+router.put('/:id',
+  verifyFirebaseToken,
+  upload.fields([
+    { name: 'music', maxCount: 1 },
+    { name: 'cover', maxCount: 1 }
+  ]),
+  updateMusic
+);
+
 
 // DELETE Music
 router.delete('/:id', verifyFirebaseToken, deleteMusic);

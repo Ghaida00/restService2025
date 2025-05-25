@@ -116,6 +116,8 @@ const getMusicByUser = async (req, res) => {
 const updateMusic = async (req, res) => {
   const musicId = req.params.id;
   const { title, artist } = req.body;
+  const musicFile = req.files?.music?.[0];
+  const imageFile = req.files?.cover?.[0];
 
   try {
     const musicRef = db.collection('music').doc(musicId);
@@ -130,11 +132,35 @@ const updateMusic = async (req, res) => {
       return res.status(403).json({ error: 'Akses ditolak: Anda bukan pemilik lagu ini' });
     }
 
-    await musicRef.update({
-      title: title || musicData.title,
-      artist: artist || musicData.artist,
+    let updatedFields = {
       updatedAt: new Date()
-    });
+    };
+
+    if (title) updatedFields.title = title;
+    if (artist) updatedFields.artist = artist;
+
+    // Jika ada file musik baru
+    if (musicFile) {
+      const upload = await cloudinary.uploader.upload(musicFile.path, {
+        resource_type: 'video',
+        folder: 'tuneverse/music'
+      });
+
+      const buffer = fs.readFileSync(musicFile.path);
+      const metadata = await mm.parseBuffer(buffer);
+      updatedFields.musicUrl = upload.secure_url;
+      updatedFields.duration = metadata.format.duration;
+    }
+
+    // Jika ada file cover baru
+    if (imageFile) {
+      const upload = await cloudinary.uploader.upload(imageFile.path, {
+        folder: 'tuneverse/cover'
+      });
+      updatedFields.imageUrl = upload.secure_url;
+    }
+
+    await musicRef.update(updatedFields);
 
     res.status(200).json({ message: 'Lagu berhasil diperbarui' });
   } catch (err) {
