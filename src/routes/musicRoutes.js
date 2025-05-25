@@ -12,7 +12,7 @@ const {
 } = require('../controllers/musicController');
 
 // POST Music 
-router.post('/', upload.fields([
+router.post('/', verifyFirebaseToken, upload.fields([
     { name: 'music', maxCount: 1 },
     { name: 'cover', maxCount: 1 }
 ]), addMusic);

@@ -10,9 +10,12 @@ const addMusic = async (req, res) => {
         const musicFile = req.files?.music?.[0];
         const imageFile = req.files?.cover?.[0];
 
-        if ( !title || !artist || !musicFile || !imageFile) {
+        if (!title || !artist || !musicFile || !imageFile) {
             return res.status(400).json({ error: 'Semua field harus diisi' });
         }
+
+        const userId = req.user.uid;
+        const username = req.user.name || req.user.email || 'anonymous';
 
         const musicUpload = await cloudinary.uploader.upload(musicFile.path, {
             resource_type: 'video',
@@ -33,7 +36,9 @@ const addMusic = async (req, res) => {
             musicUrl: musicUpload.secure_url,
             imageUrl: coverUpload.secure_url,
             duration,
-            createdAt: new Date()
+            createdAt: new Date(),
+            userId,
+            username
         });
 
         res.status(201).json({
@@ -46,8 +51,7 @@ const addMusic = async (req, res) => {
             error: 'Terjadi kesalahan saat mengunggah lagu',
             details: err.message
         });
-     }
-    
+    }
 };
 
 // GET All Music
