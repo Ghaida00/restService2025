@@ -5,7 +5,8 @@ const upload = require('../middleware/multer');
 const { 
     addMusic,
     getMusicById,
-    getAllMusic
+    getAllMusic,
+    getMusicByUser
     //add more...
 } = require('../controllers/musicController');
 
