@@ -1,7 +1,7 @@
 const express = require('express');
 const authRoutes = require('./authRoutes');
 // const userRoutes = require('./userRoutes');
-// const musicRoutes = require('./musicRoutes');
+const musicRoutes = require('./musicRoutes');
 const noteRoutes = require('./noteRoutes');
 
 const router = express.Router();
@@ -16,7 +16,7 @@ router.get('/', (req, res) => {
 
 router.use('/auth', authRoutes);
 // router.use('/users', userRoutes);
-// router.use('/music', musicRoutes);
+router.use('/music', musicRoutes);
 router.use('/notes', noteRoutes);
 
 module.exports = router;
