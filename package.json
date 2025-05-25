@@ -17,6 +17,7 @@
   "author": "Kelompok 2 - Teknologi Integrasi Sistem",
   "license": "ISC",
   "dependencies": {
+    "axios": "^1.9.0",
     "cloudinary": "^2.6.1",
     "cors": "^2.8.5",
     "dotenv": "^16.5.0",

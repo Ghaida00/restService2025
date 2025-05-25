@@ -1,5 +1,6 @@
 const { auth, db, admin } = require('../config/firebase');
 const { validationResult } = require('express-validator');
+const axios = require('axios');
 
 exports.registerUser = async (req, res, next) => {
     const errors = validationResult(req);
@@ -73,60 +74,55 @@ exports.loginUser = async (req, res, next) => {
     }
 
     const { email, password } = req.body;
-
     const firebaseWebApiKey = process.env.FIREBASE_WEB_API_KEY;
+
     if (!firebaseWebApiKey) {
-        console.error('Error: FIREBASE_WEB_API_KEY tidak disetel di environment variables.');
+        console.error('FIREBASE_WEB_API_KEY tidak ditemukan di .env');
         return res.status(500).json({ message: 'Konfigurasi server error.' });
     }
 
     const firebaseAuthUrl = `https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=${firebaseWebApiKey}`;
 
     try {
-        const response = await fetch(firebaseAuthUrl, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                email: email,
-                password: password,
-                returnSecureToken: true,
-            })
-        })
+        const response = await axios.post(firebaseAuthUrl, {
+            email,
+            password,
+            returnSecureToken: true
+        }, {
+            headers: { 'Content-Type': 'application/json' },
+            timeout: 15000 // timeout 15 detik
+        });
 
-        const responseData = await response.json();
-
-        if (!response.ok) {
-            // Tangani error dari Firebase Authentication REST API
-            const errorMessage = responseData.error?.message || 'Kredensial tidak valid atau terjadi kesalahan saat login.';
-            console.error('Firebase Auth REST API Error:', responseData.error);
-            
-            // Terjemahkan beberapa kode error umum dari Firebase jika perlu
-            if (responseData.error?.message === 'INVALID_LOGIN_CREDENTIALS' || 
-                responseData.error?.message === 'INVALID_PASSWORD' ||
-                responseData.error?.message === 'EMAIL_NOT_FOUND') {
-                return res.status(401).json({ message: 'Email atau password salah.' });
-            }
-            // Untuk error spesifik lainnya, Anda bisa menambahkan penanganan di sini
-            // atau mengembalikan pesan error generik dari Firebase.
-            return res.status(response.status || 401).json({ message: errorMessage });
-        }
-
-        const { idToken, refreshToken, localId, expiresIn } = responseData;
+        const { idToken, refreshToken, localId, expiresIn } = response.data;
 
         res.status(200).json({
             message: 'Login berhasil.',
-            idToken: idToken,
-            refreshToken: refreshToken,
-            localId: localId,
-            expiresIn: expiresIn,
-        })
+            idToken,
+            refreshToken,
+            localId,
+            expiresIn
+        });
     } catch (error) {
-        console.error('Error internal saat proses login:', error);
-        next(error);
+        if (error.response) {
+            const code = error.response.data?.error?.message;
+
+            if (['INVALID_PASSWORD', 'EMAIL_NOT_FOUND', 'INVALID_LOGIN_CREDENTIALS'].includes(code)) {
+                return res.status(401).json({ message: 'Email atau password salah.' });
+            }
+
+            console.error('Firebase Auth Error:', code);
+            return res.status(error.response.status || 500).json({
+                message: code || 'Kesalahan login'
+            });
+        } else if (error.code === 'ECONNABORTED') {
+            return res.status(504).json({ message: 'Timeout: Firebase Auth tidak merespon.' });
+        } else {
+            console.error('Error internal saat login:', error.message);
+            return res.status(500).json({ message: 'Kesalahan internal saat login.' });
+        }
     }
 }
+
 
 exports.getUserProfile = async (req, res, next) => {
     // req.user diisi oleh middleware verifyFirebaseToken
