@@ -112,12 +112,68 @@ const getMusicByUser = async (req, res) => {
 };
 
 
+// PUT Update Music
+const updateMusic = async (req, res) => {
+  const musicId = req.params.id;
+  const { title, artist } = req.body;
+
+  try {
+    const musicRef = db.collection('music').doc(musicId);
+    const doc = await musicRef.get();
+
+    if (!doc.exists) {
+      return res.status(404).json({ error: 'Lagu tidak ditemukan' });
+    }
+
+    const musicData = doc.data();
+    if (musicData.userId !== req.user.uid) {
+      return res.status(403).json({ error: 'Akses ditolak: Anda bukan pemilik lagu ini' });
+    }
+
+    await musicRef.update({
+      title: title || musicData.title,
+      artist: artist || musicData.artist,
+      updatedAt: new Date()
+    });
+
+    res.status(200).json({ message: 'Lagu berhasil diperbarui' });
+  } catch (err) {
+    res.status(500).json({ error: 'Gagal memperbarui lagu', details: err.message });
+  }
+};
+
+// DELETE Music
+const deleteMusic = async (req, res) => {
+  const musicId = req.params.id;
+
+  try {
+    const musicRef = db.collection('music').doc(musicId);
+    const doc = await musicRef.get();
+
+    if (!doc.exists) {
+      return res.status(404).json({ error: 'Lagu tidak ditemukan' });
+    }
+
+    const musicData = doc.data();
+    if (musicData.userId !== req.user.uid) {
+      return res.status(403).json({ error: 'Akses ditolak: Anda bukan pemilik lagu ini' });
+    }
+
+    await musicRef.delete();
+    res.status(200).json({ message: 'Lagu berhasil dihapus' });
+  } catch (err) {
+    res.status(500).json({ error: 'Gagal menghapus lagu', details: err.message });
+  }
+};
+
 
 
 module.exports = {
     addMusic,
     getMusicById,
     getAllMusic,
-    getMusicByUser
+    getMusicByUser,
+    updateMusic,
+    deleteMusic
     //add more methods...
 };

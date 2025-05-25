@@ -7,7 +7,9 @@ const {
     addMusic,
     getMusicById,
     getAllMusic,
-    getMusicByUser
+    getMusicByUser,
+    updateMusic,
+    deleteMusic,
     //add more...
 } = require('../controllers/musicController');
 
@@ -25,6 +27,13 @@ router.get('/:id', getMusicById);
 
 // GET Music by User ID
 router.get('/user', verifyFirebaseToken, getMusicByUser);
+
+// PUT Update Music
+router.put('/:id', verifyFirebaseToken, updateMusic);
+
+// DELETE Music
+router.delete('/:id', verifyFirebaseToken, deleteMusic);
+
 
 //add more method...
 
