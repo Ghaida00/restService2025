@@ -27,14 +27,14 @@ router.post('/',
 // GET All Music
 router.get('/', getAllMusic);
 
-// GET Music by ID 
-router.get('/:id', getMusicById);
-
 // GET Music by User ID
 router.get('/user', 
     verifyFirebaseToken, 
     getMusicByUser
 );
+
+// GET Music by ID 
+router.get('/:id', getMusicById);
 
 // PUT Update Music
 router.put('/:id',
