@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const upload = require('../middleware/multer');
+const { verifyFirebaseToken } = require('../middleware/auth'); 
 
 const { 
     addMusic,
@@ -23,7 +24,7 @@ router.get('/', getAllMusic);
 router.get('/:id', getMusicById);
 
 // GET Music by User ID
-router.get('/user/:uid', getMusicByUser);
+router.get('/user', verifyFirebaseToken, getMusicByUser);
 
 //add more method...
 
