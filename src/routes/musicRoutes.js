@@ -21,6 +21,9 @@ router.get('/', getAllMusic);
 // GET Music by ID 
 router.get('/:id', getMusicById);
 
+// GET Music by User ID
+router.get('/user/:uid', getMusicByUser);
+
 //add more method...
 
 module.exports = router;

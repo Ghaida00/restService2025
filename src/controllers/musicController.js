@@ -95,10 +95,24 @@ const getMusicById = async (req, res) => {
 };
 
 
+// GET Music by User ID
+const getMusicByUser = async (req, res) => {
+    const { uid } = req.params;
+    try {
+        const snapshot = await db.collection('music').where('userId', '==', uid).get();
+        const musics = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        res.status(200).json(musics);
+    } catch (err) {
+        res.status(500).json({ error: 'Gagal mengambil data musik user', details: err.message });
+    }
+};
+
+
 
 module.exports = {
     addMusic,
     getMusicById,
-    getAllMusic
+    getAllMusic,
+    getMusicByUser
     //add more methods...
 };
