@@ -34,7 +34,9 @@ const addMusic = async (req, res) => {
             title,
             artist,
             musicUrl: musicUpload.secure_url,
+            musicPublicId: musicUpload.public_id,      
             imageUrl: coverUpload.secure_url,
+            coverPublicId: coverUpload.public_id,
             duration,
             createdAt: new Date(),
             userId,
@@ -141,6 +143,11 @@ const updateMusic = async (req, res) => {
 
     // Jika ada file musik baru
     if (musicFile) {
+
+       if (musicData.musicPublicId) {
+        await cloudinary.uploader.destroy(musicData.musicPublicId, { resource_type: 'video' });
+      }
+
       const upload = await cloudinary.uploader.upload(musicFile.path, {
         resource_type: 'video',
         folder: 'tuneverse/music'
@@ -149,15 +156,23 @@ const updateMusic = async (req, res) => {
       const buffer = fs.readFileSync(musicFile.path);
       const metadata = await mm.parseBuffer(buffer);
       updatedFields.musicUrl = upload.secure_url;
+      updatedFields.musicPublicId = upload.public_id;
       updatedFields.duration = metadata.format.duration;
     }
 
     // Jika ada file cover baru
     if (imageFile) {
+
+      if (musicData.coverPublicId) {
+        await cloudinary.uploader.destroy(musicData.coverPublicId);
+      }
+
       const upload = await cloudinary.uploader.upload(imageFile.path, {
         folder: 'tuneverse/cover'
       });
+
       updatedFields.imageUrl = upload.secure_url;
+      updatedFields.coverPublicId = upload.public_id; 
     }
 
     await musicRef.update(updatedFields);
@@ -184,6 +199,14 @@ const deleteMusic = async (req, res) => {
     if (musicData.userId !== req.user.uid) {
       return res.status(403).json({ error: 'Akses ditolak: Anda bukan pemilik lagu ini' });
     }
+
+    if (musicData.musicPublicId) {
+      await cloudinary.uploader.destroy(musicData.musicPublicId, { resource_type: 'video' });
+    }
+    if (musicData.coverPublicId) {
+      await cloudinary.uploader.destroy(musicData.coverPublicId);
+    }
+
 
     await musicRef.delete();
     res.status(200).json({ message: 'Lagu berhasil dihapus' });
