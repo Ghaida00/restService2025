@@ -13,7 +13,7 @@ const errorHandler = require('./middleware/errorHandler');
 const app = express();
 
 app.use(cors({
-  origin: ['http://localhost:8000', 'http://127.0.0.1:8000'],
+  origin: ['http://localhost:8000', 'http://127.0.0.1:8000', 'http://localhost:4200', 'http://127.0.0.1:4200'],
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
   allowedHeaders: ['Content-Type', 'Authorization'],
   credentials: true,
