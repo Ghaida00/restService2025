@@ -215,6 +215,50 @@ const deleteMusic = async (req, res) => {
   }
 };
 
+// GET /music/explore = ambil 10 lagu (by createdAt)
+const getExploreMusic = async (req, res) => {
+  try {
+    const snapshot = await db.collection('music')
+      .orderBy('createdAt', 'asc') // pakai 'desc' kalau mau yang terbaru dulu
+      .limit(10)
+      .get();
+
+    const musics = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    res.status(200).json(musics);
+  } catch (err) {
+    res.status(500).json({ error: 'Gagal ambil data explore music', details: err.message });
+  }
+};
+
+// GET /music/top-artists = artis dengan jumlah lagu terbanyak
+const getTopArtists = async (req, res) => {
+  try {
+    const snapshot = await db.collection('music').get();
+    const artistMap = {};
+
+    snapshot.forEach(doc => {
+      const data = doc.data();
+      const artist = data.artist;
+      if (!artistMap[artist]) {
+        artistMap[artist] = {
+          name: artist,
+          count: 0,
+          imageUrl: data.imageUrl
+        };
+      }
+      artistMap[artist].count++;
+    });
+
+    const topArtists = Object.values(artistMap)
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 10);
+
+    res.status(200).json(topArtists);
+  } catch (err) {
+    res.status(500).json({ error: 'Gagal ambil data artis', details: err.message });
+  }
+};
+
 
 
 module.exports = {
@@ -223,6 +267,8 @@ module.exports = {
     getAllMusic,
     getMusicByUser,
     updateMusic,
-    deleteMusic
+    deleteMusic,
+    getExploreMusic,
+    getTopArtists,
     //add more methods...
 };
