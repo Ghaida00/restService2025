@@ -59,4 +59,47 @@ router.post(
 // Endpoint untuk mendapatkan profil pengguna yang sedang login
 router.get('/profile', verifyFirebaseToken, authController.getUserProfile);
 
+// Endpoint untuk update profil pengguna
+router.put(
+    '/profile',
+    verifyFirebaseToken, // Memerlukan autentikasi
+    [ // Validasi opsional untuk field yang bisa diupdate
+        body('username')
+            .optional()
+            .isLength({ min: 3 }).withMessage('Username minimal 3 karakter.')
+            .matches(/^[a-zA-Z0-9_]+$/).withMessage('Username hanya boleh mengandung huruf, angka, dan garis bawah.')
+            .trim(),
+        body('displayName')
+            .optional()
+            .isLength({ min: 3 }).withMessage('Display name minimal 3 karakter.')
+            .trim(),
+        body('photoURL') // URL dari Cloudinary
+            .optional({ checkFalsy: true }) // checkFalsy agar string kosong dianggap tidak ada/ingin dihapus
+            .isURL().withMessage('Format URL foto profil tidak valid.'),
+        body('userDescription')
+            .optional()
+            .isString().withMessage('Deskripsi harus teks.')
+            .trim(),
+        body('userLocation')
+            .optional()
+            .isString().withMessage('Lokasi harus teks.')
+            .trim()
+    ],
+    authController.updateUserProfile
+);
+
+// Endpoint untuk mengubah password pengguna
+router.post(
+    '/change-password',
+    verifyFirebaseToken, // Memerlukan autentikasi
+    [
+        body('newPassword')
+            .notEmpty().withMessage('Password baru tidak boleh kosong.')
+            .isLength({ min: 8 }).withMessage('Password baru harus minimal 8 karakter.')
+            .isStrongPassword().withMessage('Password baru harus mengandung huruf besar, huruf kecil, angka, dan simbol.')
+            // Anda mungkin ingin menambahkan validasi untuk currentPassword jika diperlukan oleh logika Anda
+    ],
+    authController.changeUserPassword
+);
+
 module.exports = router;

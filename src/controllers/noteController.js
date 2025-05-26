@@ -1,17 +1,15 @@
 const { db, admin } = require('../config/firebase');
+const { validationResult } = require('express-validator');
 
 exports.createNote = async (req, res, next) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+        return res.status(400).json({ errors: errors.array() });
+    }
+    
     try {
         const { pesan, penerima, pengirim, gambar, idMusic } = req.body;
         const creatorUserId = req.user.uid;
-
-        // Validasi input
-        if (!pesan) {
-            return res.status(400).json({ message: 'Kolom "pesan" wajib diisi.' });
-        }
-        if (!penerima) {
-            return res.status(400).json({ message: 'Kolom "penerima" wajib diisi.' });
-        }
 
         const notesCollection = db.collection('notes');
         const newNoteRef = notesCollection.doc();
@@ -20,7 +18,7 @@ exports.createNote = async (req, res, next) => {
             noteId: newNoteRef.id,
             pesan: pesan,
             penerima: penerima,
-            pengirim: pengirim,
+            pengirim: pengirim || creatorUserId,
             gambar: gambar || null,
             idMusic: idMusic || null,
             creatorUserId: creatorUserId,
@@ -29,6 +27,11 @@ exports.createNote = async (req, res, next) => {
         }
 
         await newNoteRef.set(newNoteData);
+
+        const userRef = db.collection('users').doc(creatorUserId); // creatorUserId dari req.user.uid
+        await userRef.update({
+            numberOfPosts: admin.firestore.FieldValue.increment(1)
+        });
 
         return res.status(201).json({
             message: 'Catatan berhasil dibuat.',
@@ -105,14 +108,44 @@ exports.getAllPublicNotes = async (req, res, next) => {
                 nextPageParams: null
             });
         }
+        // Ubah cara Anda memproses notes untuk menyertakan detail musik
+        const publicNotesPromises = notesSnapshot.docs.map(async (doc) => {
+            const noteData = doc.data();
+            let songTitle = null;
+            let songArtist = null;
+            // Anda juga bisa menambahkan songUrl jika diperlukan di frontend
+            // let songUrl = null; 
 
-        const publicNotes = [];
-        notesSnapshot.forEach(doc => {
-            publicNotes.push({
-                id: doc.id,
-                ...doc.data()
-            })
-        })
+            if (noteData.idMusic) {
+                try {
+                    // Ambil dokumen musik berdasarkan idMusic
+                    const musicDocRef = db.collection('music').doc(noteData.idMusic);
+                    const musicDoc = await musicDocRef.get();
+
+                    if (musicDoc.exists) {
+                        const musicData = musicDoc.data();
+                        songTitle = musicData.title;   // Ambil judul dari dokumen musik
+                        songArtist = musicData.artist; // Ambil artis dari dokumen musik
+                        // songUrl = musicData.musicUrl; // Jika URL juga dibutuhkan
+                    } else {
+                        console.log(`Music with ID ${noteData.idMusic} not found.`);
+                    }
+                } catch (musicError) {
+                    console.error(`Error fetching music details for idMusic ${noteData.idMusic}:`, musicError);
+                    // Biarkan songTitle dan songArtist null jika terjadi error
+                }
+            }
+
+            return {
+                id: doc.id, // atau noteData.noteId jika Anda lebih suka itu sebagai ID utama
+                ...noteData,
+                songTitle: songTitle,   // Tambahkan properti baru
+                songArtist: songArtist, // Tambahkan properti baru
+                // songUrl: songUrl,    // Tambahkan jika perlu
+            };
+        });
+
+        const publicNotes = await Promise.all(publicNotesPromises);
 
         let nextLastVisible = null;
         if (publicNotes.length === limit) {
@@ -121,13 +154,12 @@ exports.getAllPublicNotes = async (req, res, next) => {
 
         res.status(200).json({
             message: 'Catatan publik berhasil diambil.',
-            data: publicNotes,
+            data: publicNotes, // Sekarang publicNotes berisi detail musik
             pagination: {
                 currentPage: page,
                 limit: limit,
                 retrievedCount: publicNotes.length,
-                // Untuk digunakan klien pada request berikutnya: ?page=...&limit=...&lastVisible=...
-                nextPageCursor: nextLastVisible 
+                nextPageCursor: nextLastVisible
             }
         });
     } catch (error) {
@@ -137,13 +169,14 @@ exports.getAllPublicNotes = async (req, res, next) => {
 }
 
 exports.getNoteById = async (req, res, next) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+        return res.status(400).json({ errors: errors.array() });
+    }
+    
     try {
         const { noteId } = req.params;
         //const requestingUserId = req.user.uid;
-
-        if (!noteId) {
-            return res.status(400).json({ message: 'Note ID tidak boleh kosong.' });
-        }
 
         const noteRef = db.collection('notes').doc(noteId);
         const noteDoc = await noteRef.get();
@@ -153,6 +186,43 @@ exports.getNoteById = async (req, res, next) => {
         }
 
         const noteData = noteDoc.data();
+        let songTitle = null;
+        let songArtist = null;
+        let songUrl = null;
+        let songAlbumArtUrl = null;
+        let songDuration = null;
+
+        // Logika untuk mengambil detail musik jika idMusic ada
+        if (noteData.idMusic) {
+            try {
+                const musicDocRef = db.collection('music').doc(noteData.idMusic);
+                const musicDoc = await musicDocRef.get();
+                if (musicDoc.exists) {
+                    const musicData = musicDoc.data();
+                    songTitle = musicData.title;
+                    songArtist = musicData.artist;
+                    songUrl = musicData.musicUrl;
+                    songAlbumArtUrl = musicData.imageUrl;
+                    songDuration = musicData.duration;
+                } else {
+                    console.log(`Peringatan: Musik dengan ID ${noteData.idMusic} tidak ditemukan untuk catatan ${noteId}.`);
+                }
+            } catch (musicError) {
+                console.error(`Error saat mengambil detail musik untuk idMusic ${noteData.idMusic} (catatan ${noteId}):`, musicError);
+                // Biarkan detail musik null jika terjadi error saat mengambilnya
+            }
+        }
+
+        // Gabungkan data catatan dengan detail musik
+        const responseData = {
+            id: noteDoc.id, // atau noteData.noteId
+            ...noteData,
+            songTitle: songTitle,
+            songArtist: songArtist,
+            songUrl: songUrl,
+            songAlbumArtUrl: songAlbumArtUrl,
+            songDuration: songDuration
+        };
 
         // if (noteData.creatorUserId !== requestingUserId && !req.user.isAdmin) {
         //     return res.status(403).json({ message: 'Anda tidak memiliki izin untuk mengakses catatan ini.' });
@@ -160,7 +230,7 @@ exports.getNoteById = async (req, res, next) => {
 
         res.status(200).json({
             message: 'Detail catatan berhasil diambil.',
-            data: { id: noteDoc.id, ...noteData }
+            data: responseData // Kirim data yang sudah digabungkan
         });
     } catch (error) {
         console.error('Error saat mengambil detail catatan:', error);
@@ -173,14 +243,15 @@ exports.getNoteById = async (req, res, next) => {
 }
 
 exports.updateNote = async (req, res, next) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+        return res.status(400).json({ errors: errors.array() });
+    }
+
     try {
         const { noteId } = req.params;
         const requestingUserId = req.user.uid;
         const updateData = req.body;
-
-        if (!noteId) {
-            return res.status(400).json({ message: 'Note ID tidak boleh kosong.' });
-        }
 
         if (Object.keys(updateData).length === 0) {
             return res.status(400).json({ message: 'Tidak ada data untuk diperbarui.' });
@@ -226,13 +297,14 @@ exports.updateNote = async (req, res, next) => {
 }
 
 exports.deleteNote = async (req, res, next) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+        return res.status(400).json({ errors: errors.array() });
+    }
+
     try {
         const { noteId } = req.params;
         const requestingUserId = req.user.uid;
-
-        if (!noteId) {
-            return res.status(400).json({ message: 'Note ID tidak boleh kosong.' });
-        }
 
         const noteRef = db.collection('notes').doc(noteId);
         const noteDoc = await noteRef.get();
@@ -248,6 +320,11 @@ exports.deleteNote = async (req, res, next) => {
         }
 
         await noteRef.delete();
+
+        const userRef = db.collection('users').doc(existingNoteData.creatorUserId);
+        await userRef.update({
+            numberOfPosts: admin.firestore.FieldValue.increment(-1)
+        });
 
         res.status(200).json({
             message: 'Catatan berhasil dihapus.',

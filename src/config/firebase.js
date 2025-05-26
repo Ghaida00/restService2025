@@ -8,7 +8,7 @@ try {
     if (process.env.FIREBASE_SERVICE_ACCOUNT_JSON) {
         serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_JSON)
     } else if (process.env.FIREBASE_SERVICE_ACCOUNT_KEY_PATH) {
-        serviceAccount = require(process.env.FIREBASE_SERVICE_ACCOUNT_KEY_PATH);
+        serviceAccount = require(process.env.FIREBASE_SERVICE_ACCOUNT_KEY_PATH)
     } else {
         console.log('Mencoba inisialisasi Firebase Admin SDK dengan kredensial default aplikasi...');
     }
